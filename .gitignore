@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+client/build/
+*.spec
+server/kernel_state.json
