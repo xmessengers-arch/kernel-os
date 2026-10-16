@@ -1,0 +1,40 @@
+name: kernel
+on:
+  push:
+    paths:
+      - "kernel/session/cmd"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: process
+        run: |
+          CMD=$(cat kernel/session/cmd 2>/dev/null || echo "")
+          ROLE=$(cat kernel/session/role 2>/dev/null || echo "user")
+          SID=$(cat kernel/session/id 2>/dev/null || echo "default")
+          case "$CMD" in
+            time) RESP=$(date -u +"%Y-%m-%d %H:%M:%S GMT") ;;
+            version) RESP="KERNEL OS 4.0.0 | GitHub Actions Runtime" ;;
+            clear) RESP="__CLEAR__" ;;
+            whoami) RESP="$SID [$ROLE]" ;;
+            ping) RESP="pong" ;;
+            status) RESP="user=$SID role=$ROLE kernel=github-actions" ;;
+            help) RESP="Commands: time version clear whoami ping status help exit" ;;
+            exit|logout|quit) RESP="Goodbye." ;;
+            "") RESP="" ;;
+            *) RESP="Processed: $CMD" ;;
+          esac
+          echo "$RESP" > kernel/session/resp
+          date -u +%s > kernel/session/ts
+      - name: push
+        run: |
+          git config user.name "kernel-bot"
+          git config user.email "kernel@os.local"
+          git add kernel/session/
+          git diff --cached --quiet || git commit -m "kernel: response"
+          git push
